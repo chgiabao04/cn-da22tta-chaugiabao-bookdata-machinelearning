@@ -11,3 +11,6 @@
 - Xuất file dataset chuẩn bị cho PowerBI
 - Xuất file dataset chuẩn bị cho Machine Learning
 - Hoàn thành báo cáo: phần Mở đầu, Tóm tắt và Chương I(Tổng quan)
+# Nhận xét của GVHD
+- Cô đã xem qua
+- share link tiền xử lý dữ liệu của em cho cô nhé. Nếu colab thì share cho mail pttmai@tvu.edu.vn, nếu kaggle share cho mail trucmai.pham.150487@gmail.com
