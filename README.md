@@ -12,8 +12,7 @@ Dự án phân tích dữ liệu sách trên Tiki nhằm:
 - Thu thập và làm sạch dữ liệu sách từ Tiki
 - Phân tích xu hướng thị trường sách
 - Xây dựng dashboard trực quan hóa với Power BI
-- Xây dựng mô hình Machine Learning dự đoán
-
+- Xây dựng mô hình Machine Learning dự đoán doanh thu
 
 ## Cấu trúc thư mục
 
@@ -22,4 +21,41 @@ Dự án phân tích dữ liệu sách trên Tiki nhằm:
 - `soft/`: Power BI Dashboard  
 - `progress-report/`: Báo cáo tiến độ hàng tuần  
 - `thesis/`: Các tài liệu đồ án (doc, pdf, ppt, refs)  
-- `README.md`: Tập tin hướng dẫn sử dụng  
+- `README.md`: Tập tin hướng dẫn sử dụng
+
+## 🚀 Hướng dẫn chạy ứng dụng
+
+### Chạy ứng dụng web (Streamlit)
+
+```bash
+# Di chuyển vào thư mục src
+cd src
+
+# Chạy app
+streamlit run app.py
+```
+
+### Tính năng chính
+
+- **📊 Dashboard**: Trực quan hóa dữ liệu bán hàng
+- **🤖 Dự đoán doanh thu**: Sử dụng Random Forest để dự đoán
+- **📈 Phân tích xu hướng**: Insight về thị trường sách
+
+## 📦 Cấu trúc dữ liệu
+
+- `data/book_data_cleaned_forPowerBI.csv`: Dữ liệu sách đã xử lý
+- `data/comment_cleaned.csv`: Dữ liệu bình luận đã xử lý
+
+## 🛠️ Công nghệ sử dụng
+
+- **Python**: Pandas, NumPy, Scikit-learn
+- **Visualization**: Matplotlib, Seaborn, Plotly
+- **Web App**: Streamlit
+- **BI Tool**: Power BI
+- **ML Model**: Random Forest Regressor, XGBoost
+
+## 📧 Liên hệ
+
+Nếu có thắc mắc, vui lòng liên hệ:
+- Email: giabao36925@gmail.com
+- Điện thoại: 0948017324
