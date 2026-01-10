@@ -5,19 +5,35 @@ import joblib
 import os
 import matplotlib.pyplot as plt
 
-# ================== LOAD MODEL ==================
+# ================== LOAD MODELS ==================
 @st.cache_resource
-def load_model():
+def load_models():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    MODEL_PATH = os.path.join(BASE_DIR, "xgb_log_model_9features.pkl")
-    return joblib.load(MODEL_PATH)
+    
+    xgb_path = os.path.join(BASE_DIR, "xgb_log_model_9features.pkl")
+    rf_path = os.path.join(BASE_DIR, "rf_log_model_9features.pkl")
+    
+    xgb_model = joblib.load(xgb_path)
+    
+    # Try to load Random Forest, fallback to XGBoost if not found
+    try:
+        rf_model = joblib.load(rf_path)
+    except FileNotFoundError:
+        st.warning("⚠️ Random Forest model chưa được tạo. Chỉ sử dụng XGBoost. Chạy cell cuối trong model.ipynb để tạo RF model!")
+        rf_model = None
+    
+    return xgb_model, rf_model
 
-xgb_model = load_model()
+xgb_model, rf_model = load_models()
 
 # ================== HÀM DỰ ĐOÁN ==================
 def predict_book_revenue(n_review, current_price, avg_rating, discount, 
-                         comment_rating_mean=0, comment_rating_std=0):
-    """Dự đoán doanh thu sách bằng XGBoost với 9 features"""
+                         comment_rating_mean=0, comment_rating_std=0, model='random_forest'):
+    """Dự đoán doanh thu sách với 9 features
+    
+    Parameters:
+    - model: 'random_forest' (mặc định, tốt nhất) hoặc 'xgboost' (so sánh)
+    """
     # Tính toán các features phụ
     price_review_ratio = current_price / (n_review + 1)
     rating_review_product = avg_rating * n_review
@@ -36,8 +52,11 @@ def predict_book_revenue(n_review, current_price, avg_rating, discount,
         'discount_impact': [discount_impact]
     })
     
+    # Chọn model
+    selected_model = rf_model if model == 'random_forest' else xgb_model
+    
     # Predict log(revenue)
-    log_revenue_pred = xgb_model.predict(input_data)
+    log_revenue_pred = selected_model.predict(input_data)
     revenue_pred = np.expm1(log_revenue_pred)[0]
     
     return revenue_pred
@@ -45,11 +64,43 @@ def predict_book_revenue(n_review, current_price, avg_rating, discount,
 # ================== APP UI ==================
 st.set_page_config(page_title="Dự đoán doanh thu sách", layout="wide")
 
-st.title("📚 Dự đoán doanh thu sách với XGBoost")
-st.write("Mô hình **XGBoost + Log Transform** với **9 features** - Độ chính xác cao")
+st.title("📚 Dự đoán doanh thu sách với Machine Learning")
+st.write("Sử dụng **Random Forest** (tốt nhất) hoặc **XGBoost** (so sánh) với **9 features**")
 
-# ================== SIDEBAR - FEATURE IMPORTANCE ==================
+# ================== SIDEBAR ==================
 with st.sidebar:
+    st.header("🤖 Chọn mô hình")
+    
+    # Only show RF option if model exists
+    if rf_model is not None:
+        model_options = ["Random Forest (Khuyến nghị ✅)", "XGBoost (So sánh 📊)"]
+    else:
+        model_options = ["XGBoost"]
+        
+    model_choice = st.radio(
+        "Lựa chọn thuật toán:",
+        model_options,
+        help="Random Forest cho kết quả tốt nhất trên test set" if rf_model else "Chỉ có XGBoost khả dụng"
+    )
+    
+    # Map to model name
+    selected_model = 'random_forest' if 'Random Forest' in model_choice else 'xgboost'
+    current_model = rf_model if selected_model == 'random_forest' else xgb_model
+    model_name = "Random Forest" if selected_model == 'random_forest' else "XGBoost"
+    
+    # Model info
+    if selected_model == 'random_forest':
+        st.success("✅ **Random Forest** - Mô hình tốt nhất!")
+        st.metric("Test R²", "0.80")
+        st.metric("MAE", "98.6M VND")
+        st.metric("RMSE", "324.5M VND")
+    else:
+        st.info("📊 **XGBoost** - So sánh với RF")
+        st.metric("Test R²", "0.77")
+        st.metric("MAE", "109.0M VND")
+        st.metric("RMSE", "348.1M VND")
+    
+    st.markdown("---")
     st.header("📊 Feature Importance")
     
     features = [
@@ -57,7 +108,7 @@ with st.sidebar:
         'comment_rating_mean', 'comment_rating_std',
         'price_review_ratio', 'rating_review_product', 'discount_impact'
     ]
-    importance = xgb_model.feature_importances_
+    importance = current_model.feature_importances_
     
     fi_df = pd.DataFrame({
         'Feature': features,
@@ -69,7 +120,7 @@ with st.sidebar:
     colors = plt.cm.viridis(np.linspace(0.3, 0.9, len(fi_df)))
     ax.barh(fi_df['Feature'], fi_df['Importance'], color=colors, edgecolor='white', linewidth=1)
     ax.set_xlabel('Importance', fontsize=10, fontweight='bold')
-    ax.set_title('Tầm quan trọng của 9 Features', fontsize=11, fontweight='bold')
+    ax.set_title(f'{model_name} - Feature Importance', fontsize=11, fontweight='bold')
     ax.tick_params(axis='both', labelsize=8)
     ax.invert_yaxis()
     ax.grid(True, alpha=0.3, axis='x')
@@ -81,9 +132,18 @@ with st.sidebar:
     for idx, (_, row) in enumerate(fi_df.head(3).iterrows(), 1):
         st.write(f"**{idx}. {row['Feature']}**: {row['Importance']*100:.1f}%")
     
+    st.markdown("---")
+    st.markdown("### 📈 So sánh 2 mô hình")
+    st.write("**Random Forest:**")
+    st.write("• R² = 0.80 (cao nhất)")
+    st.write("• Ổn định, học tốt phi tuyến")
+    st.write("")
+    st.write("**XGBoost:**")
+    st.write("• R² = 0.77")
+    st.write("• Nhanh, file nhẹ hơn")
+    
     st.info(
-        "Mô hình sử dụng 9 features kết hợp để dự đoán chính xác. "
-        "Không cần biết số lượng đã bán (quantity)!"
+        "💡 Cả 2 model đều dùng 9 features và không cần biết số lượng đã bán (quantity)!"
     )
 
 st.markdown("---")
@@ -145,23 +205,55 @@ with col5:
 
 # ================== PREDICT ==================
 if st.button("🚀 Dự đoán doanh thu", use_container_width=True, type="primary"):
-    # Gọi hàm dự đoán
+    # Gọi hàm dự đoán với model đã chọn
     revenue_pred = predict_book_revenue(
         n_review=n_review,
         current_price=current_price,
         avg_rating=avg_rating,
-        discount=discount
+        discount=discount,
+        model=selected_model
+    )
+    
+    # So sánh với model còn lại
+    other_model = 'xgboost' if selected_model == 'random_forest' else 'random_forest'
+    other_model_name = "XGBoost" if other_model == 'xgboost' else "Random Forest"
+    revenue_pred_other = predict_book_revenue(
+        n_review=n_review,
+        current_price=current_price,
+        avg_rating=avg_rating,
+        discount=discount,
+        model=other_model
     )
 
     st.markdown("---")
     st.markdown("## 📊 Kết quả dự đoán")
 
-    # Main metric
-    st.metric(
-        "🎯 Doanh thu dự đoán", 
-        f"{revenue_pred:,.0f} VND",
-        delta="Dự đoán bởi XGBoost 9-features"
-    )
+    # Main metric with comparison
+    col_main1, col_main2 = st.columns(2)
+    
+    with col_main1:
+        st.metric(
+            f"🎯 {model_name} (đang chọn)", 
+            f"{revenue_pred:,.0f} VND",
+            delta="Kết quả chính"
+        )
+    
+    with col_main2:
+        diff = revenue_pred_other - revenue_pred
+        diff_pct = (diff / revenue_pred * 100) if revenue_pred > 0 else 0
+        st.metric(
+            f"📊 {other_model_name} (so sánh)", 
+            f"{revenue_pred_other:,.0f} VND",
+            delta=f"{diff:+,.0f} VND ({diff_pct:+.1f}%)"
+        )
+    
+    # Insight về sự khác biệt
+    if abs(diff_pct) < 5:
+        st.info(f"💡 **Kết quả tương đồng:** Cả 2 model đều dự đoán gần giống nhau (chênh lệch {abs(diff_pct):.1f}%)")
+    elif diff_pct > 5:
+        st.warning(f"⚠️ {other_model_name} dự đoán cao hơn {abs(diff_pct):.1f}% - Cân nhắc kiểm tra thêm")
+    else:
+        st.success(f"✅ {model_name} dự đoán cao hơn {abs(diff_pct):.1f}% - Tự tin với lựa chọn này")
 
     # Thông tin chi tiết
     st.markdown("---")
@@ -189,17 +281,17 @@ if st.button("🚀 Dự đoán doanh thu", use_container_width=True, type="prima
     # Insight dựa trên rating và review
     if avg_rating >= 4.5 and n_review >= 50:
         st.success(
-            "✅ **Sách chất lượng cao!** Rating tốt ({avg_rating}/5) và nhiều review ({n_review}) "
+            f"✅ **Sách chất lượng cao!** Rating tốt ({avg_rating}/5) và nhiều review ({n_review}) "
             "cho thấy sách rất được ưa chuộng."
         )
     elif avg_rating < 3.5:
         st.warning(
-            "⚠️ **Lưu ý:** Rating thấp ({avg_rating}/5) có thể ảnh hưởng đến doanh thu. "
+            f"⚠️ **Lưu ý:** Rating thấp ({avg_rating}/5) có thể ảnh hưởng đến doanh thu. "
             "Cần cải thiện chất lượng sản phẩm hoặc dịch vụ."
         )
     elif n_review < 10:
         st.info(
-            "📊 **Sách mới hoặc ít review:** Chỉ có {n_review} đánh giá. "
+            f"📊 **Sách mới hoặc ít review:** Chỉ có {n_review} đánh giá. "
             "Khuyến khích khách hàng để lại review để tăng độ tin cậy!"
         )
 
@@ -220,7 +312,8 @@ if st.button("🚀 Dự đoán doanh thu", use_container_width=True, type="prima
                 n_review=review_count,
                 current_price=current_price,
                 avg_rating=avg_rating,
-                discount=discount
+                discount=discount,
+                model=selected_model
             )
             scenario_results.append({
                 'Số review': review_count,
@@ -268,7 +361,8 @@ if st.button("🚀 Dự đoán doanh thu", use_container_width=True, type="prima
                 n_review=n_review,
                 current_price=current_price,
                 avg_rating=rating_val,
-                discount=discount
+                discount=discount,
+                model=selected_model
             )
             rating_results.append({
                 'Rating': rating_val,
@@ -359,15 +453,18 @@ st.dataframe(example_scenarios, use_container_width=True, hide_index=True)
 
 st.markdown("---")
 st.markdown("### 🤖 Về mô hình")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric("Số features", "9", delta="Interaction + Raw")
     
 with col2:
-    st.metric("Accuracy (R²)", "~0.85", delta="Test set")
+    st.metric("Random Forest R²", "0.80", delta="Tốt nhất ✅")
     
 with col3:
-    st.metric("Algorithm", "XGBoost", delta="Log Transform")
+    st.metric("XGBoost R²", "0.77", delta="So sánh 📊")
 
-st.caption("💡 Tip: Thay đổi các giá trị để khám phá cách mô hình hoạt động!")
+with col4:
+    st.metric("Technique", "Log Transform", delta="Cả 2 model")
+
+st.caption("💡 Tip: Thử chuyển đổi giữa Random Forest và XGBoost ở sidebar để so sánh kết quả!")
