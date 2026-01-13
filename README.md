@@ -54,6 +54,27 @@ streamlit run app.py
 - **BI Tool**: Power BI
 - **ML Model**: Random Forest Regressor, XGBoost
 
+## 📊 Dashboards (Power BI)
+
+### 1. Book Market Overview Dashboard
+Dashboard tổng quan doanh thu, số lượng bán, đánh giá người dùng và phân bố doanh thu theo thể loại sách.
+
+![Book Market Overview](thesis/abs/Book%20Market%20Overview%20Dashboard.png)
+
+---
+
+### 2. Revenue Analysis & Pricing Impact Dashboard
+Phân tích mối quan hệ giữa giá bán, mức giảm giá và doanh thu, hỗ trợ đánh giá chiến lược định giá.
+
+![Revenue Analysis & Pricing Impact](thesis/abs/Revenue%20Analysis%20%26%20Pricing%20Impact%20Dashboard.png)
+
+---
+
+### 3. Customer Sentiment Analysis Dashboard
+Phân tích cảm xúc bình luận khách hàng bằng mô hình PhoBERT, kết hợp đánh giá sao và word cloud.
+
+![Customer Sentiment Analysis](thesis/abs/Customer%20Sentiment%20Analysis%20Dashboard.png)
+
 ## 📧 Liên hệ
 
 Nếu có thắc mắc, vui lòng liên hệ:
