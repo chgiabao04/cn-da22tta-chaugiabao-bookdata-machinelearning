@@ -66,7 +66,7 @@ Dashboard tổng quan doanh thu, số lượng bán, đánh giá người dùng 
 ### 2. Revenue Analysis & Pricing Impact Dashboard
 Phân tích mối quan hệ giữa giá bán, mức giảm giá và doanh thu, hỗ trợ đánh giá chiến lược định giá.
 
-![Revenue Analysis & Pricing Impact](thesis/abs/Revenue%20Analysis%20%26%20Pricing%20Impact%20Dashboard.png)
+![Revenue Analysis & Pricing Impact](thesis/abs/Revenue%20Analysis%20%26%20Pricing%20Impact%20Dashboard%20v2.png)
 
 ---
 
